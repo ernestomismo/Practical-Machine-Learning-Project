@@ -1,0 +1,80 @@
+```{r echo=FALSE}
+rm(list=ls())
+set.seed(1)
+library(randomForest)
+library(caret)
+```
+
+Practical Machine Learning Project
+========================================================
+
+## Introduction
+
+
+## Read data
+
+The training data for this project are available here: 
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here: 
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+```{r}
+data <- read.csv("pml-training.csv", na.strings = c("NA", "#DIV/0!", ""))
+dataTest <- read.csv("pml-testing.csv", na.strings = c("NA", "#DIV/0!", ""))
+#data <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", na.strings = c("NA", #"#DIV/0!", ""))
+#dataTest <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", na.strings = c("NA", #"#DIV/0!", ""))
+```
+
+## Preprocess data
+
+Un vistazo previo al conjunto de datos nos muestra que existen muchas columnas con la mayoría de sus celdas en blanco, por tanto, eliminamos esas columnas.
+
+A preview of the data set shows that there's a lot of columns with a majority of blank cells. So we delete this columns.
+
+
+```{r}
+isnaCount <- apply(data, 2, function(x){ sum(is.na(x))})
+naColumns <- which(isnaCount > 0)
+booleanNAColumns <- names(data) %in% names(naColumns)
+data <- data[!booleanNAColumns]
+dataTest <- dataTest[!booleanNAColumns]
+```
+
+Intentamos predecir que tipo de movimiento se está realizando en base a los datos aportados por los distintos sensores colocados en el cuerpo del sujeto, por tanto, variables como nombre del sujeto, fecha... no aportan ninguna información 
+
+We are trying to predict the manner in which the exercise was done ... So variables like user_name or timestamp ...
+
+
+```{r}
+data <- data[,8:60]
+dataTest <- dataTest[,8:60]
+```
+
+## Cross validation
+
+We are going to use 70% of the data set to fit the model
+
+```{r}
+inTrain <- createDataPartition(y=data$classe, p=0.7, list=FALSE)
+data <- data[inTrain,]
+validationData <- data[-inTrain,]
+```
+
+
+## Fitting the model
+
+
+
+```{r cache=TRUE}
+modFit <- randomForest(classe ~ ., data=data, importance=TRUE, ntree=200)
+```
+
+## Accuracy
+
+```{r }
+p <- predict(modFit, validationData)
+table(p, validationData$classe)
+```
